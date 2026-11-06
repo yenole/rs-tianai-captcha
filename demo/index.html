@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Rust Tianai CAPTCHA Demo</title>
+  <link rel="stylesheet" href="/static/tac.css">
+  <style>body{font:16px system-ui,sans-serif;background:#f4f6f8;margin:0;color:#243040}.wrap{max-width:760px;margin:48px auto;padding:24px}.card{background:#fff;border-radius:14px;padding:24px;box-shadow:0 8px 30px #15223812}h1{margin-top:0}.hint{color:#667788;font-size:14px}button,select{font:inherit;padding:9px 14px;border:1px solid #ccd3dc;border-radius:8px;cursor:pointer}#captcha-web-sdk.captcha-web-sdk-rotate .rotate-img-div{height:100%;width:100%;position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none}#captcha-web-sdk.captcha-web-sdk-rotate .rotate-img-div img{height:100%;width:auto;max-width:100%;object-fit:contain;transform-origin:center center}</style>
+</head>
+<body>
+  <main class="wrap"><section class="card">
+    <h1>Rust Tianai CAPTCHA</h1>
+    <p class="hint">由官方 TAC Web SDK 渲染，Rust 服务提供生成与校验 API。</p>
+    <label for="captcha-type">验证码类型：</label>
+    <select id="captcha-type"><option>SLIDER</option><option>ROTATE</option><option>CONCAT</option></select>
+    <label id="obfuscate-option"><input type="checkbox" id="captcha-obfuscate">显示干扰接缝 / 缺口</label>
+    <button id="open-captcha">打开验证</button>
+    <p id="result" role="status">点击“打开验证”后加载验证码。</p>
+    <div id="captcha-box"></div>
+  </section></main>
+  <script src="/static/jquery.min.js"></script>
+  <script src="/static/tac.min.js"></script>
+  <script src="/static/demo.js"></script>
+</body>
+</html>
