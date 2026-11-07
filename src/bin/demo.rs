@@ -189,13 +189,32 @@ fn builtin_resources() -> ResourceSet {
         }
     }
     let bg_bytes = encode(&bg, ImageFormat::Jpeg);
-    let rotate_fixed = include_bytes!("../../demo/resources/rotate/fixed.png").to_vec();
-    let rotate = SliderTemplate {
-        tag: "builtin".into(),
-        active: include_bytes!("../../demo/resources/rotate/active.png").to_vec(),
-        fixed: rotate_fixed.clone(),
-        mask: Some(include_bytes!("../../demo/resources/rotate/mask.png").to_vec()),
-    };
+    let rotate_templates = vec![
+        SliderTemplate {
+            tag: "amber".into(),
+            active: include_bytes!("../../demo/resources/rotate/amber/active.png").to_vec(),
+            fixed: include_bytes!("../../demo/resources/rotate/amber/fixed.png").to_vec(),
+            mask: Some(include_bytes!("../../demo/resources/rotate/amber/mask.png").to_vec()),
+        },
+        SliderTemplate {
+            tag: "azure".into(),
+            active: include_bytes!("../../demo/resources/rotate/azure/active.png").to_vec(),
+            fixed: include_bytes!("../../demo/resources/rotate/azure/fixed.png").to_vec(),
+            mask: Some(include_bytes!("../../demo/resources/rotate/azure/mask.png").to_vec()),
+        },
+        SliderTemplate {
+            tag: "jade".into(),
+            active: include_bytes!("../../demo/resources/rotate/jade/active.png").to_vec(),
+            fixed: include_bytes!("../../demo/resources/rotate/jade/fixed.png").to_vec(),
+            mask: Some(include_bytes!("../../demo/resources/rotate/jade/mask.png").to_vec()),
+        },
+        SliderTemplate {
+            tag: "violet".into(),
+            active: include_bytes!("../../demo/resources/rotate/violet/active.png").to_vec(),
+            fixed: include_bytes!("../../demo/resources/rotate/violet/fixed.png").to_vec(),
+            mask: Some(include_bytes!("../../demo/resources/rotate/violet/mask.png").to_vec()),
+        },
+    ];
     let animal_templates = vec![
         SliderTemplate {
             tag: "hexagon".into(),
@@ -229,7 +248,7 @@ fn builtin_resources() -> ResourceSet {
             bytes: bg_bytes,
         }],
         slider_templates,
-        rotate_templates: vec![rotate],
+        rotate_templates,
     }
 }
 
@@ -327,19 +346,49 @@ fn load_slider_templates(root: &str) -> Vec<SliderTemplate> {
     templates
 }
 
+/// Discover rotate templates from `rotate/<name>/{active,fixed,mask}.png`.
+/// A flat `rotate/{active,fixed,mask}.png` set is still accepted for
+/// backward compatibility, and `fallback` is used when nothing is found.
 fn load_rotate_templates(root: &str, fallback: &[SliderTemplate]) -> Vec<SliderTemplate> {
-    let dir = std::path::Path::new(root).join("rotate");
-    match (
-        std::fs::read(dir.join("active.png")),
-        std::fs::read(dir.join("fixed.png")),
+    let rotate_root = std::path::Path::new(root).join("rotate");
+    let mut templates = Vec::new();
+    if let Ok(entries) = std::fs::read_dir(&rotate_root) {
+        let mut dirs: Vec<_> = entries.flatten().map(|e| e.path()).filter(|p| p.is_dir()).collect();
+        dirs.sort();
+        for dir in dirs {
+            if let (Ok(active), Ok(fixed)) = (
+                std::fs::read(dir.join("active.png")),
+                std::fs::read(dir.join("fixed.png")),
+            ) {
+                let tag = dir
+                    .file_name()
+                    .unwrap_or_default()
+                    .to_string_lossy()
+                    .into_owned();
+                templates.push(SliderTemplate {
+                    tag,
+                    active,
+                    fixed,
+                    mask: std::fs::read(dir.join("mask.png")).ok(),
+                });
+            }
+        }
+    }
+    if let (Ok(active), Ok(fixed)) = (
+        std::fs::read(rotate_root.join("active.png")),
+        std::fs::read(rotate_root.join("fixed.png")),
     ) {
-        (Ok(active), Ok(fixed)) => vec![SliderTemplate {
+        templates.push(SliderTemplate {
             tag: "rotate".into(),
             active,
             fixed,
-            mask: std::fs::read(dir.join("mask.png")).ok(),
-        }],
-        _ => fallback.to_vec(),
+            mask: std::fs::read(rotate_root.join("mask.png")).ok(),
+        });
+    }
+    if templates.is_empty() {
+        fallback.to_vec()
+    } else {
+        templates
     }
 }
 
@@ -385,9 +434,10 @@ fn load_resources() -> ResourceSet {
         };
     }
     eprintln!(
-        "Loaded {} backgrounds and {} slider templates from {root}; each captcha selects randomly",
+        "Loaded {} backgrounds, {} slider templates and {} rotate templates from {root}; each captcha selects randomly",
         backgrounds.len(),
-        slider_templates.len()
+        slider_templates.len(),
+        rotate_templates.len()
     );
     ResourceSet {
         backgrounds,
