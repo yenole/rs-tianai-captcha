@@ -215,6 +215,12 @@ fn builtin_resources() -> ResourceSet {
             fixed: include_bytes!("../../demo/resources/slider/fox/fixed.png").to_vec(),
             mask: Some(include_bytes!("../../demo/resources/slider/fox/mask.png").to_vec()),
         },
+        SliderTemplate {
+            tag: "dove".into(),
+            active: include_bytes!("../../demo/resources/slider/dove/active.png").to_vec(),
+            fixed: include_bytes!("../../demo/resources/slider/dove/fixed.png").to_vec(),
+            mask: Some(include_bytes!("../../demo/resources/slider/dove/mask.png").to_vec()),
+        },
     ];
     let slider_templates = animal_templates;
     ResourceSet {
