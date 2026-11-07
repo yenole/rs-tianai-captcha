@@ -4,7 +4,7 @@
 
 ## 缺省资源
 
-不配置资源目录时，服务尝试使用 `$HOME/download/1.jpg` 作为背景图（可用 `CAPTCHA_BACKGROUND_IMAGE=/path/to/image.jpg` 指定）；若文件不存在或不合适，则使用程序绘制的占位背景以及内置模板 PNG。内置 SLIDER 模板包含白色兔子脸和狐狸脸两种模板（均约 39×39），并保留深色五官以便辨识。生成接口可传 `{"type":"SLIDER","obfuscate":true}`，在真实缺口旁增加随机尺寸、半透明的干扰缺口；CONCAT 可传 `{"type":"CONCAT","obfuscate":true}`，在横向接缝叠加从背景随机采色的密集波形。网页有“显示干扰接缝 / 缺口”选项。ROTATE 模板为 128×128 橙色宽边圆环，中心透明以显示被抠出的背景图。ROTATE 蒙版为完整圆盘，圆环仅用于前景显示。动物模板文件在 `demo/resources/slider/{cat,bunny,fox}/`，每种有 `active.png`、`fixed.png`、`mask.png`。
+不配置资源目录时，服务尝试使用 `$HOME/download/1.jpg` 作为背景图（可用 `CAPTCHA_BACKGROUND_IMAGE=/path/to/image.jpg` 指定）；若文件不存在或不合适，则使用程序绘制的占位背景以及内置模板 PNG。内置 SLIDER 模板包含六边形、白色兔子脸、狐狸脸和鸽子头四种模板（均 39×39）。文件含义统一：`active.png` 是叠在抠图上的滑块前景，`fixed.png` 是画在背景上的缺口轮廓，`mask.png` 是实心轮廓、仅用其 alpha 抠图。其中 `hexagon` 为几何形状——白色边框环、中间完全透明，透明处直接透出被抠出的背景像素；`bunny`、`fox`、`dove` 为动物头像，用半透明填色加深色描边以便在复杂背景上辨识。生成接口可传 `{"type":"SLIDER","obfuscate":true}`，在真实缺口旁增加随机尺寸、半透明的干扰缺口；CONCAT 可传 `{"type":"CONCAT","obfuscate":true}`，在横向接缝叠加从背景随机采色的密集波形。网页有“显示干扰接缝 / 缺口”选项。ROTATE 模板为 128×128 橙色宽边圆环，中心透明以显示被抠出的背景图。ROTATE 蒙版为完整圆盘，圆环仅用于前景显示。模板文件在 `demo/resources/slider/{hexagon,bunny,fox,dove}/`，每种有 `active.png`、`fixed.png`、`mask.png`。
 
 ## 自定义资源
 
