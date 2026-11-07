@@ -75,24 +75,12 @@ impl CaptchaService {
                     .and_then(serde_json::Value::as_f64)
                     .map(|n| n as f32)
                     .unwrap_or(validator::DEFAULT_TOLERANT);
-                let mut normalized = track.clone();
-                let travel_width = normalized.bg_image_width;
-                if kind == "ROTATE" {
-                    // tac.min.js replaces bgImageWidth with the slider travel range
-                    // (`end`, about 242px), while Java validates against image width.
-                    let image_width = answer
-                        .get("backgroundWidth")
-                        .and_then(serde_json::Value::as_u64)
-                        .map(|w| w as f32)
-                        .unwrap_or(0.0);
-                    if image_width > 0.0 && travel_width > 0 {
-                        let scale = image_width / travel_width as f32;
-                        for point in &mut normalized.track_list {
-                            point.x *= scale;
-                        }
-                        normalized.bg_image_width = image_width.round() as u32;
-                    }
-                }
+                let normalized = track.clone();
+                // tac.min.js reports bgImageWidth as the slider travel range (`end`),
+                // not the image width. That is fine: the answer `percentage` and the
+                // measured `(last.x - first.x) / bgImageWidth` are both drag fractions,
+                // so no rescaling is needed. Rescaling x (or bgImageWidth) here
+                // multiplies the ratio and pushes it outside the tolerance.
                 (!self.behavior_check || validator::validate_slider_track(&normalized)?)
                     && validator::validate_slider_percentage(&normalized, expected, Some(tolerant))?
             }

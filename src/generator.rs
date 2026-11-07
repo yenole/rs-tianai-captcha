@@ -217,10 +217,12 @@ fn gen_slider(id: &str, p: &GenerateParam, r: &ResourceSet, rotate: bool) -> Res
             0,
             (source.height() as i32 - cut.height() as i32) / 2,
         );
-        // Java sets degree = 360 - randomX * 360 / bgWidth. The SDK rotates
-        // positively as the user drags, so the required drag fraction is
-        // degree / 360 = 1 - randomX / bgWidth (not randomX / bgWidth).
-        let expected_slider_percent = 1.0 - random_x as f32 / source.width() as f32;
+        // `degree` is clockwise. The SDK also rotates the strip clockwise by
+        // 360 * moveX / end, so the user must undo it by rotating (360 - degree),
+        // i.e. dragging (360 - degree) / 360 = randomX / backgroundWidth.
+        // Storing 1 - randomX / backgroundWidth encoded the opposite direction,
+        // which made visually aligned drags fail the percentage check.
+        let expected_slider_percent = random_x as f32 / source.width() as f32;
         (
             serde_json::json!({"percentage":expected_slider_percent,"degree":degree,"tolerant":0.03,"backgroundWidth":source.width()}),
             strip,
@@ -389,6 +391,67 @@ fn gen_concat(id: &str, p: &GenerateParam, r: &ResourceSet) -> Result<Generated>
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::io::Cursor;
+
+    /// The stored ROTATE answer must be the drag fraction that visually
+    /// straightens the strip. `degree` is clockwise in the rendered image and the
+    /// SDK also rotates clockwise, so the user drags (360 - degree)/360 of the
+    /// travel range. This asserts against the value `generate` really stores.
+    #[test]
+    fn rotate_answer_matches_the_drag_that_undoes_the_rendered_rotation() {
+        let template = {
+            let img = RgbaImage::from_fn(48, 48, |x, y| {
+                let (dx, dy) = (x as i64 - 24, y as i64 - 24);
+                let inside = dx * dx + dy * dy < 20 * 20;
+                image::Rgba([200, 100, 50, if inside { 255 } else { 0 }])
+            });
+            let mut bytes = Vec::new();
+            img.write_to(&mut Cursor::new(&mut bytes), image::ImageFormat::Png)
+                .unwrap();
+            bytes
+        };
+        let background = {
+            let img = RgbaImage::from_fn(320, 175, |x, y| {
+                image::Rgba([(x % 256) as u8, (y % 256) as u8, 90, 255])
+            });
+            let mut bytes = Vec::new();
+            image::DynamicImage::ImageRgba8(img)
+                .write_to(&mut Cursor::new(&mut bytes), image::ImageFormat::Jpeg)
+                .unwrap();
+            bytes
+        };
+        let template = SliderTemplate {
+            tag: "rotate".into(),
+            active: template.clone(),
+            fixed: template.clone(),
+            mask: Some(template),
+        };
+        let resources = ResourceSet {
+            backgrounds: vec![ImageResource {
+                tag: "bg".into(),
+                bytes: background,
+            }],
+            slider_templates: vec![template.clone()],
+            rotate_templates: vec![template],
+        };
+        let param = GenerateParam {
+            r#type: CaptchaType::Rotate,
+            ..Default::default()
+        };
+        for _ in 0..200 {
+            let generated = generate("ROTATE_probe", &param, &resources).unwrap();
+            let answer = generated.answer;
+            let degree = answer["degree"].as_f64().unwrap();
+            let stored = answer["percentage"].as_f64().unwrap();
+            let required = (360.0 - degree) / 360.0;
+            assert!(
+                (required - stored).abs() <= answer["tolerant"].as_f64().unwrap(),
+                "degree={degree:.2} requires dragging {required:.3} of the range, \
+                 but the answer stored {stored:.3}"
+            );
+        }
+    }
+
     #[test]
     fn concat_swaps_top_left_and_right_and_keeps_bottom() {
         let src = RgbaImage::from_fn(6, 4, |x, y| image::Rgba([x as u8, y as u8, 0, 255]));
