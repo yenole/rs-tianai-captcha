@@ -306,11 +306,10 @@ fn add_concat_waveform_seam(image: &mut RgbaImage, seam_y: u32, accent: [u8; 3])
     for x in 0..width {
         // Higher base frequency gives a shorter wavelength (about 4px per cycle).
         let phase = x as f32 * 1.5;
-        let offset = 2.7 * phase.sin()
-            + 1.25 * (phase * 2.15 + 0.6).sin()
-            + 0.55 * (phase * 3.2 + 1.3).sin();
+        let offset =
+            1.35 * phase.sin() + 0.6 * (phase * 2.15 + 0.6).sin() + 0.3 * (phase * 3.2 + 1.3).sin();
         let wave_y = seam_y as f32 + offset;
-        for dy in -10..=10 {
+        for dy in -5..=5 {
             let py = wave_y.round() as i32 + dy;
             if py < 0 || py >= image.height() as i32 {
                 continue;
@@ -324,13 +323,13 @@ fn add_concat_waveform_seam(image: &mut RgbaImage, seam_y: u32, accent: [u8; 3])
             let darken = |amount: f32| -> [u8; 3] {
                 std::array::from_fn(|c| (accent[c] as f32 * (1.0 - amount)).round() as u8)
             };
-            let (rgb, alpha) = if dist <= 1.0 {
+            let (rgb, alpha) = if dist <= 0.6 {
                 (lighten(0.68), 0.92)
-            } else if dist <= 3.0 {
+            } else if dist <= 1.6 {
                 (accent, 0.88)
-            } else if dist <= 5.5 {
+            } else if dist <= 3.0 {
                 (darken(0.68), 0.48)
-            } else if dist <= 9.0 {
+            } else if dist <= 4.6 {
                 (darken(0.68), 0.18)
             } else {
                 continue;
