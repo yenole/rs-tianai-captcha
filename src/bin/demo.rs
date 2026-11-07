@@ -157,6 +157,41 @@ fn encode(image: &RgbaImage, format: ImageFormat) -> Vec<u8> {
     cursor.into_inner()
 }
 
+/// Cap the template edge length so one oversized asset (e.g. the 128x128 rotate
+/// template) does not render far larger than the 39x39 slider templates.
+/// Sized so the rotate ring stays comfortably readable and easy to grab.
+const MAX_TEMPLATE_SIZE: u32 = 96;
+
+/// Downscale a template PNG so its longest edge is at most `MAX_TEMPLATE_SIZE`,
+/// preserving the aspect ratio. Images already within the cap are returned untouched.
+fn fit_template(bytes: Vec<u8>) -> Vec<u8> {
+    let Ok(img) = image::load_from_memory(&bytes) else {
+        return bytes;
+    };
+    let (w, h) = (img.width(), img.height());
+    if w.max(h) <= MAX_TEMPLATE_SIZE {
+        return bytes;
+    }
+    // Keep the aspect ratio: both layers of a template must stay aligned.
+    let scale = MAX_TEMPLATE_SIZE as f32 / w.max(h) as f32;
+    let (tw, th) = (
+        ((w as f32 * scale).round() as u32).max(1),
+        ((h as f32 * scale).round() as u32).max(1),
+    );
+    let resized = img.resize_exact(tw, th, image::imageops::FilterType::Lanczos3);
+    encode(&resized.to_rgba8(), ImageFormat::Png)
+}
+
+/// Build a template while normalising every layer to the same capped size.
+fn template(tag: &str, active: Vec<u8>, fixed: Vec<u8>, mask: Option<Vec<u8>>) -> SliderTemplate {
+    SliderTemplate {
+        tag: tag.into(),
+        active: fit_template(active),
+        fixed: fit_template(fixed),
+        mask: mask.map(fit_template),
+    }
+}
+
 /// Small synthetic assets let the demo run out-of-the-box. Supply real licensed assets
 /// in CAPTCHA_RESOURCE_DIR to replace these placeholders.
 fn builtin_resources() -> ResourceSet {
@@ -190,56 +225,56 @@ fn builtin_resources() -> ResourceSet {
     }
     let bg_bytes = encode(&bg, ImageFormat::Jpeg);
     let rotate_templates = vec![
-        SliderTemplate {
-            tag: "amber".into(),
-            active: include_bytes!("../../demo/resources/rotate/amber/active.png").to_vec(),
-            fixed: include_bytes!("../../demo/resources/rotate/amber/fixed.png").to_vec(),
-            mask: Some(include_bytes!("../../demo/resources/rotate/amber/mask.png").to_vec()),
-        },
-        SliderTemplate {
-            tag: "azure".into(),
-            active: include_bytes!("../../demo/resources/rotate/azure/active.png").to_vec(),
-            fixed: include_bytes!("../../demo/resources/rotate/azure/fixed.png").to_vec(),
-            mask: Some(include_bytes!("../../demo/resources/rotate/azure/mask.png").to_vec()),
-        },
-        SliderTemplate {
-            tag: "jade".into(),
-            active: include_bytes!("../../demo/resources/rotate/jade/active.png").to_vec(),
-            fixed: include_bytes!("../../demo/resources/rotate/jade/fixed.png").to_vec(),
-            mask: Some(include_bytes!("../../demo/resources/rotate/jade/mask.png").to_vec()),
-        },
-        SliderTemplate {
-            tag: "violet".into(),
-            active: include_bytes!("../../demo/resources/rotate/violet/active.png").to_vec(),
-            fixed: include_bytes!("../../demo/resources/rotate/violet/fixed.png").to_vec(),
-            mask: Some(include_bytes!("../../demo/resources/rotate/violet/mask.png").to_vec()),
-        },
+        template(
+            "amber",
+            include_bytes!("../../demo/resources/rotate/amber/active.png").to_vec(),
+            include_bytes!("../../demo/resources/rotate/amber/fixed.png").to_vec(),
+            Some(include_bytes!("../../demo/resources/rotate/amber/mask.png").to_vec()),
+        ),
+        template(
+            "azure",
+            include_bytes!("../../demo/resources/rotate/azure/active.png").to_vec(),
+            include_bytes!("../../demo/resources/rotate/azure/fixed.png").to_vec(),
+            Some(include_bytes!("../../demo/resources/rotate/azure/mask.png").to_vec()),
+        ),
+        template(
+            "jade",
+            include_bytes!("../../demo/resources/rotate/jade/active.png").to_vec(),
+            include_bytes!("../../demo/resources/rotate/jade/fixed.png").to_vec(),
+            Some(include_bytes!("../../demo/resources/rotate/jade/mask.png").to_vec()),
+        ),
+        template(
+            "violet",
+            include_bytes!("../../demo/resources/rotate/violet/active.png").to_vec(),
+            include_bytes!("../../demo/resources/rotate/violet/fixed.png").to_vec(),
+            Some(include_bytes!("../../demo/resources/rotate/violet/mask.png").to_vec()),
+        ),
     ];
     let animal_templates = vec![
-        SliderTemplate {
-            tag: "hexagon".into(),
-            active: include_bytes!("../../demo/resources/slider/hexagon/active.png").to_vec(),
-            fixed: include_bytes!("../../demo/resources/slider/hexagon/fixed.png").to_vec(),
-            mask: Some(include_bytes!("../../demo/resources/slider/hexagon/mask.png").to_vec()),
-        },
-        SliderTemplate {
-            tag: "bunny".into(),
-            active: include_bytes!("../../demo/resources/slider/bunny/active.png").to_vec(),
-            fixed: include_bytes!("../../demo/resources/slider/bunny/fixed.png").to_vec(),
-            mask: Some(include_bytes!("../../demo/resources/slider/bunny/mask.png").to_vec()),
-        },
-        SliderTemplate {
-            tag: "fox".into(),
-            active: include_bytes!("../../demo/resources/slider/fox/active.png").to_vec(),
-            fixed: include_bytes!("../../demo/resources/slider/fox/fixed.png").to_vec(),
-            mask: Some(include_bytes!("../../demo/resources/slider/fox/mask.png").to_vec()),
-        },
-        SliderTemplate {
-            tag: "dove".into(),
-            active: include_bytes!("../../demo/resources/slider/dove/active.png").to_vec(),
-            fixed: include_bytes!("../../demo/resources/slider/dove/fixed.png").to_vec(),
-            mask: Some(include_bytes!("../../demo/resources/slider/dove/mask.png").to_vec()),
-        },
+        template(
+            "hexagon",
+            include_bytes!("../../demo/resources/slider/hexagon/active.png").to_vec(),
+            include_bytes!("../../demo/resources/slider/hexagon/fixed.png").to_vec(),
+            Some(include_bytes!("../../demo/resources/slider/hexagon/mask.png").to_vec()),
+        ),
+        template(
+            "bunny",
+            include_bytes!("../../demo/resources/slider/bunny/active.png").to_vec(),
+            include_bytes!("../../demo/resources/slider/bunny/fixed.png").to_vec(),
+            Some(include_bytes!("../../demo/resources/slider/bunny/mask.png").to_vec()),
+        ),
+        template(
+            "fox",
+            include_bytes!("../../demo/resources/slider/fox/active.png").to_vec(),
+            include_bytes!("../../demo/resources/slider/fox/fixed.png").to_vec(),
+            Some(include_bytes!("../../demo/resources/slider/fox/mask.png").to_vec()),
+        ),
+        template(
+            "dove",
+            include_bytes!("../../demo/resources/slider/dove/active.png").to_vec(),
+            include_bytes!("../../demo/resources/slider/dove/fixed.png").to_vec(),
+            Some(include_bytes!("../../demo/resources/slider/dove/mask.png").to_vec()),
+        ),
     ];
     let slider_templates = animal_templates;
     ResourceSet {
@@ -323,12 +358,12 @@ fn load_slider_templates(root: &str) -> Vec<SliderTemplate> {
                     .unwrap_or_default()
                     .to_string_lossy()
                     .into_owned();
-                templates.push(SliderTemplate {
-                    tag,
+                templates.push(template(
+                    &tag,
                     active,
                     fixed,
-                    mask: std::fs::read(dir.join("mask.png")).ok(),
-                });
+                    std::fs::read(dir.join("mask.png")).ok(),
+                ));
             }
         }
     }
@@ -336,12 +371,12 @@ fn load_slider_templates(root: &str) -> Vec<SliderTemplate> {
         std::fs::read(slider_root.join("active.png")),
         std::fs::read(slider_root.join("fixed.png")),
     ) {
-        templates.push(SliderTemplate {
-            tag: "default".into(),
+        templates.push(template(
+            "default",
             active,
             fixed,
-            mask: std::fs::read(slider_root.join("mask.png")).ok(),
-        });
+            std::fs::read(slider_root.join("mask.png")).ok(),
+        ));
     }
     templates
 }
@@ -365,12 +400,12 @@ fn load_rotate_templates(root: &str, fallback: &[SliderTemplate]) -> Vec<SliderT
                     .unwrap_or_default()
                     .to_string_lossy()
                     .into_owned();
-                templates.push(SliderTemplate {
-                    tag,
+                templates.push(template(
+                    &tag,
                     active,
                     fixed,
-                    mask: std::fs::read(dir.join("mask.png")).ok(),
-                });
+                    std::fs::read(dir.join("mask.png")).ok(),
+                ));
             }
         }
     }
@@ -378,12 +413,12 @@ fn load_rotate_templates(root: &str, fallback: &[SliderTemplate]) -> Vec<SliderT
         std::fs::read(rotate_root.join("active.png")),
         std::fs::read(rotate_root.join("fixed.png")),
     ) {
-        templates.push(SliderTemplate {
-            tag: "rotate".into(),
+        templates.push(template(
+            "rotate",
             active,
             fixed,
-            mask: std::fs::read(rotate_root.join("mask.png")).ok(),
-        });
+            std::fs::read(rotate_root.join("mask.png")).ok(),
+        ));
     }
     if templates.is_empty() {
         fallback.to_vec()
