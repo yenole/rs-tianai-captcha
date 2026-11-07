@@ -198,6 +198,12 @@ fn builtin_resources() -> ResourceSet {
     };
     let animal_templates = vec![
         SliderTemplate {
+            tag: "hexagon".into(),
+            active: include_bytes!("../../demo/resources/slider/hexagon/active.png").to_vec(),
+            fixed: include_bytes!("../../demo/resources/slider/hexagon/fixed.png").to_vec(),
+            mask: Some(include_bytes!("../../demo/resources/slider/hexagon/mask.png").to_vec()),
+        },
+        SliderTemplate {
             tag: "bunny".into(),
             active: include_bytes!("../../demo/resources/slider/bunny/active.png").to_vec(),
             fixed: include_bytes!("../../demo/resources/slider/bunny/fixed.png").to_vec(),
