@@ -1,10 +1,10 @@
 use axum::{
-    Json, Router,
     extract::State,
     http::StatusCode,
     response::Html,
     response::IntoResponse,
     routing::{get, post},
+    Json, Router,
 };
 use image::{ImageFormat, Rgba, RgbaImage};
 use serde::Deserialize;
@@ -308,14 +308,15 @@ fn load_backgrounds(root: &str) -> Vec<ImageResource> {
                 paths.push(path);
             } else if path.is_dir()
                 && path.file_name().and_then(|n| n.to_str()) == Some("backgrounds")
-                && let Ok(files) = std::fs::read_dir(path)
             {
-                paths.extend(
-                    files
-                        .flatten()
-                        .map(|file| file.path())
-                        .filter(|p| p.is_file() && is_image_file(p)),
-                );
+                if let Ok(files) = std::fs::read_dir(path) {
+                    paths.extend(
+                        files
+                            .flatten()
+                            .map(|file| file.path())
+                            .filter(|p| p.is_file() && is_image_file(p)),
+                    );
+                }
             }
         }
     }
@@ -388,7 +389,11 @@ fn load_rotate_templates(root: &str, fallback: &[SliderTemplate]) -> Vec<SliderT
     let rotate_root = std::path::Path::new(root).join("rotate");
     let mut templates = Vec::new();
     if let Ok(entries) = std::fs::read_dir(&rotate_root) {
-        let mut dirs: Vec<_> = entries.flatten().map(|e| e.path()).filter(|p| p.is_dir()).collect();
+        let mut dirs: Vec<_> = entries
+            .flatten()
+            .map(|e| e.path())
+            .filter(|p| p.is_dir())
+            .collect();
         dirs.sort();
         for dir in dirs {
             if let (Ok(active), Ok(fixed)) = (
@@ -441,14 +446,15 @@ fn load_resources() -> ResourceSet {
             std::env::var("HOME").unwrap_or_default()
         )
     });
-    if let Ok(bytes) = std::fs::read(&user_default)
-        && image::load_from_memory(&bytes)
+    if let Ok(bytes) = std::fs::read(&user_default) {
+        if image::load_from_memory(&bytes)
             .is_ok_and(|img| img.width() >= 239 && img.height() >= 128)
-    {
-        backgrounds.push(ImageResource {
-            tag: "user-default".into(),
-            bytes,
-        });
+        {
+            backgrounds.push(ImageResource {
+                tag: "user-default".into(),
+                bytes,
+            });
+        }
     }
 
     let mut slider_templates = load_slider_templates(&root);

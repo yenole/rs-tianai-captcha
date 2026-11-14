@@ -1,16 +1,51 @@
 [package]
 name = "tianai-captcha"
 version = "0.1.0"
-edition = "2024"
+edition = "2021"
+rust-version = "1.73"
+description = "dromara/tianai-captcha 的 Rust 移植：SLIDER 滑块、ROTATE 旋转、CONCAT 拼接行为验证码的生成与校验"
+license = "Apache-2.0"
+repository = "https://github.com/yenole/rs-tianai-captcha"
+homepage = "https://github.com/yenole/rs-tianai-captcha"
+documentation = "https://docs.rs/tianai-captcha"
+readme = "README.md"
+keywords = ["captcha", "verification", "image", "slider", "tianai"]
+categories = ["multimedia::images", "web-programming"]
+# 只发布库源码、许可证与文档；demo/ 前端资源与演示服务不随 crate 分发。
+# tests/ 只用于本地端到端验证（依赖 demo/ 资源），因此不打包。
+include = [
+    "src/**/*.rs",
+    "Cargo.toml",
+    "README.md",
+    "ANALYSIS.md",
+    "LICENSE",
+]
+
+[features]
+# demo 二进制需要 axum/tokio：`cargo run --features demo --bin demo`。
+demo = ["dep:axum", "dep:tokio"]
 
 [dependencies]
-axum = "0.8.8"
 base64 = "0.22.1"
 dashmap = "6.2.1"
-image = { version = "0.25.10", features = ["jpeg", "png", "webp"] }
+image = { version = "0.25.10", default-features = false, features = [
+    "jpeg",
+    "png",
+    "webp",
+] }
 rand = "0.10.3"
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.145"
-tokio = { version = "1.52.1", features = ["macros", "rt-multi-thread", "net"] }
 
-[dev-dependencies]
+# 仅 demo feature 使用，默认不编译。
+axum = { version = "0.8.8", optional = true }
+tokio = { version = "1.52.1", features = [
+    "macros",
+    "rt-multi-thread",
+    "net",
+], optional = true }
+
+[[bin]]
+name = "demo"
+path = "src/bin/demo.rs"
+required-features = ["demo"]

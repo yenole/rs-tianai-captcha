@@ -11,7 +11,7 @@
 - 兼容现有 Java/Web SDK 数据契约：字段名、百分比容错、图片 MIME/data URI、单次校验语义。
 - 当前阶段不实现 HTTP 服务、Redis、WASM 和 Java/Spring Boot 接入层；这些可作为后续适配 crate/模块。
 
-上游仓库分析基于 `dromara/tianai-captcha` 源码（通过 `gitcode.com/dromara/tianai-captcha` 获取）。其许可证为 MulanPSL-2.0；移植与分发时应保留并遵守上游许可证及资源文件的授权要求。
+上游仓库分析基于 `dromara/tianai-captcha` 源码（通过 `gitcode.com/dromara/tianai-captcha` 获取）。其许可证为 Apache-2.0（仓库根目录 `LICENSE` 为其原文副本）；移植与分发时应保留并遵守上游许可证及资源文件的授权要求。
 
 ## 2. 上游架构及请求数据流
 

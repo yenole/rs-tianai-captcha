@@ -4,13 +4,28 @@
 
 - 单 crate，只做核心逻辑：图片生成、一次性答案缓存、百分比校验、基础轨迹校验。
 - 不包含 HTTP 框架、Redis、WASM、Spring Boot 适配层；`demo` 里有一个 axum 示例服务可以直接跑起来。
-- 移植物与上游许可证（MulanPSL-2.0）的兼容说明见 [`ANALYSIS.md`](./ANALYSIS.md)。
+- 移植物与上游许可证（Apache-2.0）的兼容说明见 [`ANALYSIS.md`](./ANALYSIS.md)。
+
+## 安装
+
+```sh
+cargo add tianai-captcha
+```
+
+- 默认只编译库本体，依赖精简；界面演示服务需要额外开启 `demo` feature：
+
+```sh
+cargo run --features demo --bin demo
+```
+
+- 需要 Rust 1.73+（package 为 2021 edition）。
+- crate 体积很小：`demo/` 下的前端页面与示例图片**不随 crate 发布**，请从仓库获取。
 
 ## 快速开始
 
 ```sh
-cargo test          # 运行单元测试与端到端用例
-cargo run --bin demo
+cargo test          # 运行单元测试（在仓库根目录）
+cargo run --features demo --bin demo
 ```
 
 打开 <http://127.0.0.1:8080>，选择验证码类型后拖动提交。Demo 的资源配置、接口字段和页面行为说明见 [`demo/README.md`](./demo/README.md)。
@@ -131,4 +146,4 @@ startTime, stopTime, left, top, trackList, data
 
 ## 许可证
 
-移植物基于上游 `dromara/tianai-captcha`（MulanPSL-2.0）。分发前请确认并保留上游许可证与资源授权要求。
+移植物基于上游 `dromara/tianai-captcha`（Apache-2.0，见 [`LICENSE`](./LICENSE)）。分发前请确认并保留上游许可证与资源授权要求。
